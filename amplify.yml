@@ -1,0 +1,17 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Starting build for Travel Planner AI"
+        - pip install -r app/requirements.txt
+    build:
+      commands:
+        - streamlit run app/travelagent.py --server.port=8501 --server.headless=true &
+        - sleep 20
+  artifacts:
+    baseDirectory: /
+    files:
+      - '**/*'
+  cache:
+    paths: []
