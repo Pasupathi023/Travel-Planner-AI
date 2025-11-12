@@ -13,8 +13,9 @@ frontend:
         - echo "Starting Streamlit static build..."
         - mkdir -p build
         - streamlit run app/travelagent.py --server.port=8501 --server.address=0.0.0.0 &
-        - sleep 25
-        - echo "Streamlit app started successfully!"
+        - echo "Waiting 60 seconds for Streamlit to start..."
+        - sleep 60
+        - echo "Streamlit app started successfully! Capturing output..."
         - wget -O build/index.html http://localhost:8501
   artifacts:
     baseDirectory: build
