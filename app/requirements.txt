@@ -1,0 +1,7 @@
+streamlit
+serpapi
+agno
+python-dotenv
+google-api-python-client
+requests
+pytz
