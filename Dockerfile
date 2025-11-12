@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy app code
 COPY app/ .
 
-# Streamlit uses port 8080 (for AWS Amplify compatibility)
+# Streamlit must use port 8080 (Amplify expects this)
 EXPOSE 8080
 
 # Run Streamlit
