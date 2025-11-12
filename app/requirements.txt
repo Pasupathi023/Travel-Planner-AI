@@ -1,9 +1,7 @@
 streamlit
-serpapi
 agno
+serpapi
 python-dotenv
 google-api-python-client
-google-generativeai
 requests
 pytz
-python-dateutil
