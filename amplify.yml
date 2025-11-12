@@ -3,13 +3,23 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "Starting build..."
+        - echo "Installing Python and dependencies..."
+        - apt-get update -y
+        - apt-get install -y python3 python3-pip
+        - pip3 install -r app/requirements.txt
     build:
       commands:
-        - docker build -t travel-planner .
+        - echo "Starting Streamlit..."
+        - mkdir -p build
+        - streamlit run app/travelagent.py --server.port=8501 --server.address=0.0.0.0 &
+        - sleep 20
+        - echo "Streamlit app started!"
+        # Optional: capture index page (for Amplify preview)
+        - wget -O build/index.html http://localhost:8501
   artifacts:
-    baseDirectory: /
+    baseDirectory: build
     files:
       - '**/*'
   cache:
-    paths: []
+    paths:
+      - /root/.cache/pip
