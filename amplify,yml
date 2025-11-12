@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing Python dependencies..."
+        - pip install -r app/requirements.txt
+    build:
+      commands:
+        - echo "Starting Streamlit app build..."
+        - mkdir -p /app_output
+        - cp -r app/* /app_output/
+  artifacts:
+    baseDirectory: /app_output
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - ~/.cache/pip
