@@ -5,21 +5,29 @@ from datetime import datetime
 from agno.agent import Agent
 from agno.models.google import Gemini
 
+# -------------------------------
 # Load Gemini API Key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# -------------------------------
+if "GEMINI_API_KEY" in st.secrets:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+else:
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
-    st.error("Missing Gemini API key! Please add GEMINI_API_KEY in .streamlit/secrets.toml")
+    st.error("Missing Gemini API key! Please add GEMINI_API_KEY in .streamlit/secrets.toml or as an environment variable.")
     st.stop()
 
 os.environ["GOOGLE_API_KEY"] = GEMINI_API_KEY
 
+# -------------------------------
 # Streamlit Page Setup
+# -------------------------------
 st.set_page_config(page_title="AI Travel Planner", layout="wide")
-
 st.title("AI Travel Planner")
 
+# -------------------------------
 # User Input Section
+# -------------------------------
 st.subheader("Trip Details")
 
 source = st.text_input("Departure City:", "")
@@ -30,17 +38,17 @@ travel_theme = st.selectbox(
     ["", "Couple Getaway", "Family Vacation", "Adventure Trip", "Solo Exploration"],
     index=0
 )
-activity_preferences = st.text_area(
-    "What activities do you enjoy?",
-    ""
-)
+activity_preferences = st.text_area("What activities do you enjoy?", "")
 departure_date = st.date_input("Departure Date")
 return_date = st.date_input("Return Date")
 
 st.markdown("---")
 
+# -------------------------------
 # Sidebar Preferences
+# -------------------------------
 st.sidebar.header("Travel Preferences")
+
 budget = st.sidebar.radio("Budget:", ["Economy", "Standard", "Luxury"], index=0)
 hotel_rating = st.sidebar.selectbox("Preferred Hotel Rating:", ["Any", "3⭐", "4⭐", "5⭐"], index=0)
 flight_class = st.sidebar.radio("Flight Class:", ["Economy", "Business", "First Class"], index=0)
@@ -48,7 +56,9 @@ visa_required = st.sidebar.checkbox("Visa Required?")
 travel_insurance = st.sidebar.checkbox("Travel Insurance?")
 currency_converter = st.sidebar.checkbox("Currency Exchange Info?")
 
+# -------------------------------
 # Define Gemini AI Agent
+# -------------------------------
 planner = Agent(
     name="Travel Planner",
     instructions=[
@@ -59,27 +69,45 @@ planner = Agent(
         "3. Hotel and restaurant suggestions",
         "4. A detailed day-by-day itinerary"
     ],
-    model=Gemini(id="models/gemini-2.5-flash"),
+    model=Gemini(id="models/gemini-2.0-flash"),
 )
 
-# Function: Safe Run (retry on rate limit)
-def safe_run(agent, prompt, retries=3):
+# -------------------------------
+# Function: Safe Run (robust retries)
+# -------------------------------
+def safe_run(agent, prompt, retries=5):
+    """Executes the Gemini agent with automatic retry on API errors."""
     for i in range(retries):
         try:
             return agent.run(prompt, stream=False)
         except Exception as e:
-            if "429" in str(e) or "Too Many Requests" in str(e):
+            err = str(e)
+            if "503" in err:
+                wait = (i + 1) * 8
+                st.warning(f"Gemini service temporarily unavailable (503). Retrying in {wait}s...")
+                time.sleep(wait)
+            elif "404" in err:
+                st.error("Model not found. Please check your model name (try 'models/gemini-2.5-flash').")
+                return None
+            elif "429" in err or "Too Many Requests" in err:
                 wait = (i + 1) * 5
                 st.warning(f"Gemini rate limit hit. Retrying in {wait}s...")
                 time.sleep(wait)
+            elif "API key" in err or "Invalid" in err:
+                st.error("Invalid or expired Gemini API key. Please verify your key in secrets.toml.")
+                return None
             else:
-                raise
-    st.error("Failed after retries due to API rate limits.")
+                st.error(f"Unexpected error: {err}")
+                return None
+
+    st.error("Gemini API unavailable after multiple retries. Please try again later.")
     return None
 
+# -------------------------------
 # Generate Travel Plan
+# -------------------------------
 if st.button("Generate My Travel Plan"):
-    if not destination:
+    if not destination.strip():
         st.warning("Please enter your destination before generating a plan.")
     else:
         with st.spinner("Generating your personalized itinerary..."):
@@ -96,6 +124,7 @@ if st.button("Generate My Travel Plan"):
             Visa required: {visa_required}, Travel insurance: {travel_insurance}.
             Output the plan in a clear, structured, professional format.
             """
+
             response = safe_run(planner, prompt)
 
         if response:
@@ -105,5 +134,9 @@ if st.button("Generate My Travel Plan"):
             st.success("Travel plan created successfully.")
         else:
             st.error("Failed to generate travel plan. Please try again later.")
+
+# -------------------------------
+# App Ready
+# -------------------------------
 if __name__ == "__main__":
     st.write("App loaded successfully!")
