@@ -6,7 +6,7 @@ from agno.agent import Agent
 from agno.models.google import Gemini
 
 # Load Gemini API Key
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
     st.error("Missing Gemini API key! Please add GEMINI_API_KEY in .streamlit/secrets.toml")
